@@ -232,13 +232,13 @@ testArray = do
   assert $ A.modifyAtIndices [0, 2, 8] not [true,  true, true,  true] ==
                                            [false, true, false, true]
 
-  log "sort should reorder a list into ascending order based on the result of compare"
+  log "sort should reorder an array into ascending order based on the result of compare"
   assert $ A.sort [1, 3, 2, 5, 6, 4] == [1, 2, 3, 4, 5, 6]
 
-  log "sortBy should reorder a list into ascending order based on the result of a comparison function"
+  log "sortBy should reorder an array into ascending order based on the result of a comparison function"
   assert $ A.sortBy (flip compare) [1, 3, 2, 5, 6, 4] == [6, 5, 4, 3, 2, 1]
 
-  log "sortWith should reorder a list into ascending order based on the result of compare over a projection"
+  log "sortWith should reorder an array into ascending order based on the result of compare over a projection"
   assert $ A.sortWith id [1, 3, 2, 5, 6, 4] == [1, 2, 3, 4, 5, 6]
 
   log "take should keep the specified number of items from the front of an array, discarding the rest"
@@ -310,10 +310,10 @@ testArray = do
   log "groupBy should group consecutive equal elements into arrays based on an equivalence relation"
   assert $ A.groupBy (\x y -> odd x && odd y) [1, 1, 2, 2, 3, 3] == [1 :| [1], NE.singleton 2, NE.singleton 2, 3 :| [3]]
 
-  log "nub should remove duplicate elements from the list, keeping the first occurence"
+  log "nub should remove duplicate elements from the array, keeping the first occurence"
   assert $ A.nub [1, 2, 2, 3, 4, 1] == [1, 2, 3, 4]
 
-  log "nubBy should remove duplicate items from the list using a supplied predicate"
+  log "nubBy should remove duplicate items from the array using a supplied predicate"
   let nubPred = \x y -> if odd x then false else x == y
   assert $ A.nubBy nubPred [1, 2, 2, 3, 3, 4, 4, 1] == [1, 2, 3, 3, 4, 1]
 
@@ -332,7 +332,7 @@ testArray = do
   assert $ A.deleteBy (/=) 2 [1, 2, 1] == [2, 1]
   assert $ A.deleteBy (/=) 1 [1, 2, 1] == [1, 1]
 
-  log "(\\\\) should return the difference between two lists"
+  log "(\\\\) should return the difference between two arrays"
   assert $ [1, 2, 3, 4, 3, 2, 1] \\ [1, 1, 2, 3] == [4, 3, 2]
 
   log "intersect should return the intersection of two arrays"
@@ -341,16 +341,16 @@ testArray = do
   log "intersectBy should return the intersection of two arrays using the specified equivalence relation"
   assert $ A.intersectBy (\x y -> (x * 2) == y) [1, 2, 3] [2, 6] == [1, 3]
 
-  log "zipWith should use the specified function to zip two lists together"
+  log "zipWith should use the specified function to zip two arrays together"
   assert $ A.zipWith (\x y -> [show x, y]) [1, 2, 3] ["a", "b", "c"] == [["1", "a"], ["2", "b"], ["3", "c"]]
 
-  log "zipWithA should use the specified function to zip two lists together"
+  log "zipWithA should use the specified function to zip two arrays together"
   assert $ A.zipWithA (\x y -> Just $ Tuple x y) [1, 2, 3] ["a", "b", "c"] == Just [Tuple 1 "a", Tuple 2 "b", Tuple 3 "c"]
 
-  log "zip should use the specified function to zip two lists together"
+  log "zip should use the specified function to zip two arrays together"
   assert $ A.zip [1, 2, 3] ["a", "b", "c"] == [Tuple 1 "a", Tuple 2 "b", Tuple 3 "c"]
 
-  log "unzip should deconstruct a list of tuples into a tuple of lists"
+  log "unzip should deconstruct an array of tuples into a tuple of arrays"
   assert $ A.unzip [Tuple 1 "a", Tuple 2 "b", Tuple 3 "c"] == Tuple [1, 2, 3] ["a", "b", "c"]
 
   log "foldM should perform a fold using a monadic step function"
