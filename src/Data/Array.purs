@@ -873,8 +873,8 @@ groupBy op xs =
 -- | nub [1, 2, 1, 3, 3] = [1, 2, 3]
 -- | ```
 -- |
-nub :: forall a. Eq a => Array a -> Array a
-nub = nubBy eq
+nub :: forall a. Ord a => Array a -> Array a
+nub = nubBy compare
 
 -- | Remove the duplicates from an array, where element equality is determined
 -- | by the specified equivalence relation, creating a new array.
@@ -883,11 +883,14 @@ nub = nubBy eq
 -- | nubBy (\a b -> a `mod` 3 == b `mod` 3) [1, 3, 4, 5, 6] = [1,3,5]
 -- | ```
 -- |
-nubBy :: forall a. (a -> a -> Boolean) -> Array a -> Array a
-nubBy eq xs =
-  case uncons xs of
-    Just o -> o.head : nubBy eq (filter (\y -> not (o.head `eq` y)) o.tail)
-    Nothing -> []
+nubBy :: forall a. (a -> a -> Ordering) -> Array a -> Array a
+nubBy comp arr = case head sorted of
+  Nothing -> []
+  Just x -> pureST do
+     result <- unsafeThaw $ singleton x
+     foldRecM assimilate 
+  where
+  sorted = sortBy comp arr
 
 -- | Calculate the union of two arrays. Note that duplicates in the first array
 -- | are preserved while duplicates in the second array are removed.
