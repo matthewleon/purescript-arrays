@@ -117,9 +117,10 @@ import Prelude
 import Control.Alt ((<|>))
 import Control.Alternative (class Alternative)
 import Control.Lazy (class Lazy, defer)
+import Control.Monad.Eff (Eff)
 import Control.Monad.Rec.Class (class MonadRec, Step(..), tailRecM2)
-import Control.Monad.ST (pureST)
-import Data.Array.ST (unsafeFreeze, emptySTArray, pokeSTArray, pushSTArray, modifySTArray, withArray)
+import Control.Monad.ST (ST, pureST)
+import Data.Array.ST (STArray, unsafeFreeze, unsafeThaw, emptySTArray, pokeSTArray, pushSTArray, modifySTArray, withArray)
 import Data.Array.ST.Iterator (iterator, iterate, pushWhile)
 import Data.Foldable (class Foldable, foldl, foldr, traverse_)
 import Data.Foldable (foldl, foldr, foldMap, fold, intercalate, elem, notElem, find, findMap, any, all) as Exports
@@ -874,7 +875,18 @@ groupBy op xs =
 -- | ```
 -- |
 nub :: forall a. Ord a => Array a -> Array a
-nub = nubBy compare
+nub arr = case head sorted of
+  Nothing -> []
+  Just x -> pureST do
+     result <- unsafeThaw $ singleton x
+     unsafeFreeze =<< foldRecM assimilate result sorted
+  where
+  sorted = sort arr
+
+  assimilate :: forall h. STArray h a -> a -> Eff (st :: ST h) (STArray h a)
+  assimilate acc x = do
+     lst <- unsafePartial (fromJust <<< last) <$> unsafeFreeze acc
+     if lst == x then pure acc else pushSTArray acc x *> pure acc
 
 -- | Remove the duplicates from an array, where element equality is determined
 -- | by the specified equivalence relation, creating a new array.
@@ -883,14 +895,11 @@ nub = nubBy compare
 -- | nubBy (\a b -> a `mod` 3 == b `mod` 3) [1, 3, 4, 5, 6] = [1,3,5]
 -- | ```
 -- |
-nubBy :: forall a. (a -> a -> Ordering) -> Array a -> Array a
-nubBy comp arr = case head sorted of
-  Nothing -> []
-  Just x -> pureST do
-     result <- unsafeThaw $ singleton x
-     foldRecM assimilate 
-  where
-  sorted = sortBy comp arr
+nubBy :: forall a. (a -> a -> Boolean) -> Array a -> Array a
+nubBy eq xs =
+  case uncons xs of
+    Just o -> o.head : nubBy eq (filter (\y -> not (o.head `eq` y)) o.tail)
+    Nothing -> []
 
 -- | Calculate the union of two arrays. Note that duplicates in the first array
 -- | are preserved while duplicates in the second array are removed.
