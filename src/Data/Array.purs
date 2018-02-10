@@ -105,7 +105,6 @@ module Data.Array
   , zip
   , unzip
 
-  , foldM
   , foldRecM
 
   , unsafeIndex
@@ -122,7 +121,7 @@ import Control.Monad.ST (pureST)
 import Data.Array.ST (unsafeFreeze, emptySTArray, pokeSTArray, pushSTArray, modifySTArray, withArray)
 import Data.Array.ST.Iterator (iterator, iterate, pushWhile)
 import Data.Foldable (class Foldable, foldl, foldr, traverse_)
-import Data.Foldable (foldl, foldr, foldMap, fold, intercalate, elem, notElem, find, findMap, any, all) as Exports
+import Data.Foldable (foldl, foldr, foldMap, fold, foldM, intercalate, elem, notElem, find, findMap, any, all) as Exports
 import Data.Maybe (Maybe(..), maybe, isJust, fromJust)
 import Data.NonEmpty (NonEmpty, (:|))
 import Data.Traversable (scanl, scanr) as Exports
@@ -1041,15 +1040,6 @@ unzip xs =
     fsts' <- unsafeFreeze fsts
     snds' <- unsafeFreeze snds
     pure $ Tuple fsts' snds'
-
--- | Perform a fold using a monadic step function.
--- |
--- | ```purescript
--- | foldM (\x y -> Just (x + y)) 0 [1, 4] = Just 5
--- | ```
--- |
-foldM :: forall m a b. Monad m => (a -> b -> m a) -> a -> Array b -> m a
-foldM f a = uncons' (\_ -> pure a) (\b bs -> f a b >>= \a' -> foldM f a' bs)
 
 foldRecM :: forall m a b. MonadRec m => (a -> b -> m a) -> a -> Array b -> m a
 foldRecM f a array = tailRecM2 go a 0
