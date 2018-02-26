@@ -33,6 +33,8 @@ module Data.Array
   , singleton
   , (..), range
   , replicate
+  , accumulate
+  , accumulate'
   , some
   , many
 
@@ -114,16 +116,19 @@ module Data.Array
   ) where
 
 import Prelude
+
 import Control.Alt ((<|>))
 import Control.Alternative (class Alternative)
 import Control.Lazy (class Lazy, defer)
+import Control.Monad.Eff (foreachE)
 import Control.Monad.Rec.Class (class MonadRec, Step(..), tailRecM2)
 import Control.Monad.ST (pureST)
-import Data.Array.ST (unsafeFreeze, emptySTArray, pokeSTArray, pushSTArray, modifySTArray, withArray)
+import Data.Array.ST (emptySTArray, modifySTArray, pokeSTArray, pushSTArray, unsafeFreeze, unsafeThaw, withArray)
 import Data.Array.ST.Iterator (iterator, iterate, pushWhile)
 import Data.Foldable (class Foldable, foldl, foldr, traverse_)
 import Data.Foldable (foldl, foldr, foldMap, fold, intercalate, elem, notElem, find, findMap, any, all) as Exports
 import Data.Maybe (Maybe(..), maybe, isJust, fromJust)
+import Data.Monoid (class Monoid, mempty)
 import Data.NonEmpty (NonEmpty, (:|))
 import Data.Traversable (scanl, scanr) as Exports
 import Data.Traversable (sequence, traverse)
@@ -174,6 +179,27 @@ foreign import range :: Int -> Int -> Array Int
 -- | replicate 2 "Hi" = ["Hi", "Hi"]
 -- | ```
 foreign import replicate :: forall a. Int -> a -> Array a
+
+accumulate
+  :: forall a
+   . Monoid a
+  => Int
+  -> Array (Tuple Int a)
+  -> Array a
+accumulate = accumulate' append mempty
+
+accumulate'
+  :: forall a e
+   . (e -> a -> e)
+  -> e
+  -> Int
+  -> Array (Tuple Int a)
+  -> Array e
+accumulate' f initVal size xs = pureST do
+  ys <- unsafeThaw $ replicate size initVal
+  foreachE xs \(Tuple i x) ->
+    void $ modifySTArray ys i $ flip f x
+  unsafeFreeze ys
 
 -- | An infix synonym for `range`.
 -- | ```purescript
